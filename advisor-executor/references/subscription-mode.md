@@ -113,6 +113,28 @@ for await (const msg of query({
 
 Same trade as the CLI: no automatic transcript forwarding to the advisor, but the advisor gets tools.
 
+## Day-to-day prompting
+
+With the agents installed (`cp examples/claude-code/agents/{advisor,scout}.md ~/.claude/agents/`), the pattern is chosen per task by how you phrase the ask:
+
+**Executor mode** (`/model sonnet`) — name the consult points explicitly:
+
+> Fix the flaky retry logic in the sync module. Consult the advisor agent before committing to an approach, and again before you call it done.
+
+The two anchors — *before the approach, before declaring done* — are the timings the API-side measurements identified as highest-value. Mid-task, "get a second opinion from the advisor on this" works whenever the session is spinning.
+
+**Coordinator mode** (`/model opus` or fable) — phrase the task as fan-out and fence the strong model off from the reading:
+
+> Map every place the backend touches file uploads — controllers, services, validation. Dispatch scout agents in parallel, one focused question each; don't read the large files yourself, synthesize their reports.
+
+Without the "don't read the files yourself" clause, the strong model does scout work at coordinator prices.
+
+**Plan mode** (`/model opusplan`) — nothing to phrase; prompt normally.
+
+**Rollout advice:** run a week with explicit per-prompt consults before baking the CLAUDE.md block (above) into a repo — and put it in the repos where it earned its keep, project-level, not your global CLAUDE.md. Every measured regression in the API-side data came from forcing consults onto tasks that didn't need them; the subscription version has the same failure mode, spending quota instead of dollars.
+
+**Upgrading the advisor:** if your plan includes Fable 5, change `model: opus` to `model: claude-fable-5` in the advisor agent file. Same workflow, stronger advisor, Sonnet still does all the volume — the tweet's SWE-bench configuration, running on a subscription.
+
 ## Choosing, on a subscription
 
 - Quota pressure comes from **long sessions on Opus/Fable** → run the session on Sonnet, add the advisor subagent (or just use `opusplan`).

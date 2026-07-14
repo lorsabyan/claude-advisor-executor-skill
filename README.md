@@ -35,6 +35,34 @@ The skill triggers on its own when you're working on an Anthropic API agent and 
 
 > Review this agent — are we paying frontier rates for mechanical work?
 
+## Using the patterns in your own repos (subscription)
+
+One-time setup — install the two agents globally so they work everywhere:
+
+```bash
+cp advisor-executor/examples/claude-code/agents/{advisor,scout}.md ~/.claude/agents/
+```
+
+Then pick by task shape:
+
+**Feature/bugfix work** — `/model sonnet`, and name the consult points in the prompt:
+
+> Fix the flaky retry logic in the sync module. Consult the advisor agent before committing to an approach, and again before you call it done.
+
+Those two anchors — *before the approach, before declaring done* — are where the measured value is.
+
+**Research/audit/survey work** — keep the session on Opus or Fable and phrase the task as fan-out:
+
+> Map every place the backend touches file uploads — controllers, services, validation. Dispatch scout agents in parallel, one focused question each; don't read the large files yourself, synthesize their reports.
+
+The "don't read the files yourself" clause matters — without it the strong model burns its own quota doing scout work.
+
+**Plan-heavy work** — `/model opusplan` and prompt normally. Opus plans, Sonnet executes.
+
+To stop typing the advisor clause every time, add the `CLAUDE.md` block from [`references/subscription-mode.md`](advisor-executor/references/subscription-mode.md) to the repos where it earns its keep — project-level, not global. Run a week with explicit per-prompt consults first and only automate where it helped: every measured regression in Anthropic's data came from forcing consults onto tasks that didn't need them.
+
+If your plan includes Fable 5, changing `model: opus` to `model: claude-fable-5` in `~/.claude/agents/advisor.md` upgrades the advisor while Sonnet still does all the volume.
+
 ## What's inside
 
 ```
