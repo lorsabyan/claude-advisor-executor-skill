@@ -73,7 +73,10 @@ def main():
         "retrieval-augmented generation, and what did each contribute?"
     )
 
-    environment = client.beta.environments.create()
+    environment = client.beta.environments.create(
+        name="research-fanout",
+        config={"type": "anthropic_cloud", "networking": {"type": "unrestricted"}},
+    )
     coordinator, _worker = build_team()
 
     session = client.beta.sessions.create(
@@ -82,7 +85,12 @@ def main():
     )
     client.beta.sessions.events.send(
         session.id,
-        events=[{"type": "user.message", "content": question}],
+        events=[
+            {
+                "type": "user.message",
+                "content": [{"type": "text", "text": question}],
+            }
+        ],
     )
 
     # The primary thread is a condensed view of everything. You see workers start
@@ -93,15 +101,16 @@ def main():
             match event.type:
                 case "session.thread_created":
                     print(f"\n[+] worker thread: {event.agent_name}")
+                case "agent.thread_message_sent":
+                    print(f"\n[>] delegated to {event.to_agent_name}")
                 case "agent.thread_message_received":
                     print(f"\n[<] {event.from_agent_name} reported back")
                 case "agent.message":
                     for block in event.content:
                         if block.type == "text":
                             print(block.text, end="", flush=True)
-                case "session.thread_status_idle":
-                    if event.session_thread_id is None:  # primary thread done
-                        break
+                case "session.status_idle":
+                    break  # all threads idle — the coordinator is done
 
     for thread in client.beta.sessions.threads.list(session.id):
         print(f"\n[{thread.agent.name}] {thread.status}")

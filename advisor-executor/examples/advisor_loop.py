@@ -96,6 +96,15 @@ def count_advisor_calls(content):
     )
 
 
+def _is_advisor_block(b) -> bool:
+    # Match by name/id, not just type: other server tools (web_search, ...) also
+    # emit server_tool_use blocks, and stripping those would corrupt their history.
+    t = getattr(b, "type", None)
+    if t == "server_tool_use":
+        return getattr(b, "name", None) == "advisor"
+    return t == "advisor_tool_result"
+
+
 def strip_advisor_blocks(messages):
     """Required before dropping the advisor tool: leaving advisor_tool_result
     blocks in the history with no advisor tool in `tools` is a 400."""
@@ -103,12 +112,7 @@ def strip_advisor_blocks(messages):
     for msg in messages:
         content = msg["content"]
         if isinstance(content, list):
-            content = [
-                b
-                for b in content
-                if getattr(b, "type", None)
-                not in ("server_tool_use", "advisor_tool_result")
-            ]
+            content = [b for b in content if not _is_advisor_block(b)]
             if not content:
                 continue
         cleaned.append({**msg, "content": content})

@@ -96,12 +96,14 @@ function countAdvisorCalls(
 function stripAdvisorBlocks(
   messages: Anthropic.Beta.Messages.BetaMessageParam[],
 ): Anthropic.Beta.Messages.BetaMessageParam[] {
+  // Match by name, not just type: other server tools (web_search, ...) also emit
+  // server_tool_use blocks, and stripping those would corrupt their history.
+  const isAdvisorBlock = (b: any) =>
+    (b.type === "server_tool_use" && b.name === "advisor") ||
+    b.type === "advisor_tool_result";
   return messages.flatMap((msg) => {
     if (!Array.isArray(msg.content)) return [msg];
-    const content = msg.content.filter(
-      (b: any) =>
-        b.type !== "server_tool_use" && b.type !== "advisor_tool_result",
-    );
+    const content = msg.content.filter((b: any) => !isAdvisorBlock(b));
     return content.length ? [{ ...msg, content }] : [];
   });
 }
