@@ -1,6 +1,6 @@
 ---
 name: advisor-executor
-description: Cut the cost of Claude agents by splitting the work across models — a cheap executor with a strong advisor tool (advisor_20260301), or a strong orchestrator delegating to cheap workers (Managed Agents multiagent). Use when building or reviewing an Anthropic API agent and the ask involves cost, price, spend, budget, token bill, "too expensive", model choice/routing/escalation, using Fable/Opus to steer Sonnet/Haiku, planner-worker or coordinator-subagent designs, or getting frontier quality without frontier cost.
+description: Cut the cost of Claude agents by splitting the work across models — a cheap executor with a strong advisor tool (advisor_20260301), or a strong orchestrator delegating to cheap workers (Managed Agents multiagent). Use when building or reviewing an Anthropic API agent and the ask involves cost, price, spend, budget, token bill, "too expensive", model choice/routing/escalation, using Fable/Opus to steer Sonnet/Haiku, planner-worker or coordinator-subagent designs, or getting frontier quality without frontier cost. Also covers the subscription equivalents (no API key) — stretching Claude Pro/Max usage limits in Claude Code via opusplan, advisor/scout subagents with per-agent model overrides, and the Agent SDK on a setup-token.
 license: MIT
 ---
 
@@ -104,11 +104,23 @@ Load-bearing constraints: delegation is **one level deep** (depth > 1 is ignored
 
 Full setup, thread lifecycle, event streaming, and cross-thread tool-permission routing: **`references/orchestrator.md`**.
 
+## No API key? Subscription equivalents
+
+Both API features require pay-per-token billing — there is no subscription path to them. But on a Claude Pro/Max subscription the scarce resource is the **usage quota**, Opus/Fable tokens drain it much faster than Sonnet, and the same judgment/volume split stretches it. Claude Code has native machinery for both:
+
+- **Advisor →** `/model opusplan` (plan on Opus, execute on Sonnet — zero config), or for mid-task escalation an **advisor subagent** on a stronger model. One structural difference: the API advisor sees the full transcript automatically but has no tools; a subagent starts fresh but *has* tools, so it grounds its advice in the actual repo instead of the executor's summary. The escalation prompt must carry the state.
+- **Orchestrator →** run the session on the strong model, fan token-heavy reading out to cheap **scout subagents** (`model: haiku` in the agent frontmatter, spawned in parallel). Subagent context isolation is native — the files a scout reads never enter the coordinator's context, only its report does.
+- **Agent SDK →** authenticates on a subscription via `claude setup-token` → `CLAUDE_CODE_OAUTH_TOKEN`; the `agents` option takes per-agent `model` overrides for the same two shapes.
+
+Drop-in agent definitions in `examples/claude-code/agents/` (advisor + scout), full guidance including the CLAUDE.md steering blocks in **`references/subscription-mode.md`**.
+
 ## Files
 
 - `references/advisor-tool.md` — complete advisor API surface: parameters, result variants, error codes, `pause_turn`, streaming, `usage.iterations[]` billing, caching, model compatibility matrix.
 - `references/orchestrator.md` — Managed Agents multi-agent: coordinator/worker setup, threads, events, MCP + vault scoping, limits.
 - `references/system-prompts.md` — verbatim system-prompt blocks for advisor timing, advice-weighting, the Haiku coding variant, the Opus checkpoint, and the advisor brevity line, each with its measured effect and caveat.
+- `references/subscription-mode.md` — the same patterns without an API key: opusplan, advisor/scout subagents in Claude Code, CLAUDE.md steering, Agent SDK on a subscription token.
+- `examples/claude-code/agents/` — drop-in `advisor.md` (Opus, read-only tools, structured advice format) and `scout.md` (Haiku, focused sub-question researcher) for `.claude/agents/`.
 - `examples/advisor_loop.py` / `examples/advisor_loop.ts` — a complete agent loop: tool dispatch, `pause_turn` resumption, nudge, conversation-level call cap, per-model cost accounting from `usage.iterations`.
 - `examples/orchestrator.py` — coordinator + worker fan-out with per-thread streaming.
 - `scripts/validate_pair.py` — check an executor/advisor pair against the compatibility matrix before you get a `400`.

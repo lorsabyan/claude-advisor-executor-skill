@@ -14,6 +14,8 @@ Two API features let you keep frontier-model judgment while billing most tokens 
 
 Those numbers are Anthropic's, on their benchmarks. Evaluate on your own workload.
 
+**No API key?** The two features above are API-billed, but the *patterns* work on a Claude Pro/Max subscription too — there the scarce resource is your usage quota, and the same judgment/volume split stretches it. The skill covers the Claude Code equivalents: `opusplan`, an advisor subagent on a stronger model, Haiku scout subagents for fan-out reading, and the Agent SDK on a `claude setup-token`. Drop-in agent definitions included in `examples/claude-code/agents/`.
+
 ## Install
 
 ```bash
@@ -44,12 +46,15 @@ advisor-executor/
 │   │                               #   the model-compatibility matrix
 │   ├── orchestrator.md             # Managed Agents: coordinator/worker setup, threads, events,
 │   │                               #   MCP + vault scoping, the hard limits
-│   └── system-prompts.md           # verbatim prompt blocks, each with its measured effect AND
-│                                   #   its caveat (several help one executor and hurt another)
+│   ├── system-prompts.md           # verbatim prompt blocks, each with its measured effect AND
+│   │                               #   its caveat (several help one executor and hurt another)
+│   └── subscription-mode.md        # the same patterns on a Pro/Max subscription: opusplan,
+│                                   #   advisor/scout subagents, Agent SDK on a setup-token
 ├── examples/
 │   ├── advisor_loop.py             # complete loop: dispatch, pause_turn resumption, call cap,
 │   ├── advisor_loop.ts             #   nudge, per-model cost accounting
-│   └── orchestrator.py             # coordinator + worker fan-out with per-thread streaming
+│   ├── orchestrator.py             # coordinator + worker fan-out with per-thread streaming
+│   └── claude-code/agents/         # drop-in advisor.md (opus) + scout.md (haiku) for .claude/agents/
 └── scripts/
     └── validate_pair.py            # check an executor/advisor pair before the API 400s you
 ```
